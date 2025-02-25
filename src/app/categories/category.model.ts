@@ -1,0 +1,3 @@
+type CategoryModel = {
+    name: string;
+};
