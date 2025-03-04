@@ -2,31 +2,31 @@
 
 import { useEffect, useState } from "react";
 import {
-  addUnitType,
-  deleteUnitType,
-  getAllUnitTypes,
-} from "../../db/unitTypes";
+  addUnit,
+  deleteUnit,
+  getAllUnits,
+} from "../../database/units";
 import { useForm } from "react-hook-form";
 
 export default function Page() {
-  const [unitTypes, setUnitTypes] = useState<any[]>([]);
+  const [units, setUnits] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  const { register, handleSubmit, reset, setError, setValue } = useForm({
-    defaultValues: { name: "", status: "Active" },
+  const { register, handleSubmit, reset, setError, setValue, watch } = useForm({
+    defaultValues: { name: "", type: "inputbox", options: "" },
   });
 
   useEffect(() => {
-    loadUnitTypes();
+    loadUnits();
   }, []);
 
-  const loadUnitTypes = async () => {
-    const data = await getAllUnitTypes();
-    setUnitTypes(data);
+  const loadUnits = async () => {
+    const data = await getAllUnits();
+    setUnits(data);
   };
 
   const onSubmit = async (data: any) => {
-    const unitExists = unitTypes.some(
+    const unitExists = units.some(
       (unit) => unit.name.toLowerCase() === data.name.toLowerCase()
     );
 
@@ -34,19 +34,27 @@ export default function Page() {
       setError("name", { type: "manual", message: "Unit name must be unique" });
       return;
     }
-    await addUnitType(data);
+
+    const payload = {
+      ...data,
+      options: data.options ? JSON.stringify(data.options.split(",")) : null, // Convert options to JSON
+    };
+
+    await addUnit(payload);
     reset();
-    loadUnitTypes();
+    loadUnits();
   };
 
   const handleEdit = (unit: any) => {
     setValue("name", unit.name);
-    setValue("status", unit.status);
+    setValue("type", unit.type);
+    setValue("options", unit.options ? JSON.parse(unit.options).join(",") : ""); // Convert JSON to string
     setEditingId(unit.id);
   };
+
   const handleDelete = async (id: number) => {
-    await deleteUnitType(id);
-    loadUnitTypes();
+    await deleteUnit(id);
+    loadUnits();
   };
 
   return (
@@ -60,18 +68,28 @@ export default function Page() {
               <tr className="bg-gray-200">
                 <th className="p-2">ID</th>
                 <th className="p-2">Name</th>
-                <th className="p-2">Status</th>
+                <th className="p-2">Type</th>
+                <th className="p-2">Options</th>
                 <th className="p-2">Action</th>
               </tr>
             </thead>
             <tbody>
-              {unitTypes.length > 0 ? (
-                unitTypes.map((unit) => (
+              {units.length > 0 ? (
+                units.map((unit) => (
                   <tr key={unit.id} className="border-t">
                     <td className="p-2">{unit.id}</td>
                     <td className="p-2">{unit.name}</td>
-                    <td className="p-2">{unit.status}</td>
-                    <td>
+                    <td className="p-2">{unit.type}</td>
+                    <td className="p-2">
+                      {unit.options ? JSON.parse(unit.options).join(", ") : "-"}
+                    </td>
+                    <td className="p-2">
+                      <button
+                        className="text-blue-500 mr-2"
+                        onClick={() => handleEdit(unit)}
+                      >
+                        Edit
+                      </button>
                       <button
                         className="text-red-500"
                         onClick={() => handleDelete(unit.id)}
@@ -83,7 +101,7 @@ export default function Page() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="p-2 text-center">
+                  <td colSpan={5} className="p-2 text-center">
                     No units found
                   </td>
                 </tr>
@@ -92,7 +110,9 @@ export default function Page() {
           </table>
         </div>
         <div className="lg:w-1/3 w-full bg-white p-4 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold mb-2">Add Unit</h2>
+          <h2 className="text-xl font-bold mb-2">
+            {editingId ? "Edit Unit" : "Add Unit"}
+          </h2>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label>Unit Name</label>
@@ -105,18 +125,32 @@ export default function Page() {
             </div>
 
             <div>
-              <label>Status</label>
-              <select {...register("status")} className="border p-2 w-full">
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
+              <label>Type</label>
+              <select {...register("type")} className="border p-2 w-full">
+                <option value="inputbox">Input Box</option>
+                <option value="checkbox">Checkbox</option>
+                <option value="selectbox">Select Box</option>
+                <option value="radio">Radio Button</option>
               </select>
             </div>
+
+            {watch("type") === "selectbox" || watch("type") === "radio" ? (
+              <div>
+                <label>Options (comma-separated)</label>
+                <input
+                  type="text"
+                  {...register("options")}
+                  placeholder="e.g., Option1, Option2"
+                  className="border border-gray-300 rounded-md p-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            ) : null}
 
             <button
               type="submit"
               className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
             >
-              Save Unit Type
+              {editingId ? "Update Unit" : "Save Unit"}
             </button>
           </form>
         </div>

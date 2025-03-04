@@ -4,7 +4,7 @@ import prisma from "./prisma";
 
 
 export async function getCustomers(searchQuery?: string) {
-  return await prisma.customers.findMany({
+  return await prisma.customer.findMany({
     where:searchQuery?
     {
         OR:[
@@ -19,15 +19,23 @@ export async function getCustomers(searchQuery?: string) {
 }
 
 export async function addCustomer(customer: { name: string; mobile: string }) {
-  return await prisma.customers.create({
+  return await prisma.customer.create({
     data: customer,
   });
 }
 
 export async function deleteCustomer(customerId:number) {
-    return await prisma.customers.delete({
-        where: {
-            id: customerId,
-        },
+    return await prisma.customer.delete({
+      where: {
+          id: customerId,
+      },
     });
+}
+
+export async function getCustomerByMobile(mobile: string) {
+  return await prisma.customer.findFirst({
+    where: {
+      mobile: mobile,
+    },
+  })
 }

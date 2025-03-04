@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,24 +7,80 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model customers {
-  id      Int    @id @default(autoincrement())
-  name    String
-  mobile  String
+model Customer {
+  id           Int           @id @default(autoincrement())
+  name         String
+  mobile       String        @unique
+  orders       Order[]
+  transactions Transaction[]
 }
 
 model Category {
-  id    Int    @id @default(autoincrement())
-  name  String @unique
+  id       Int       @id @default(autoincrement())
+  name     String
+  patterns Pattern[]
+}
+
+model Unit {
+  id       Int           @id @default(autoincrement())
+  name     String
+  type     String
+  options  String? // JSON string for options
+  patterns PatternUnit[]
+}
+
+model Pattern {
+  id         Int           @id @default(autoincrement())
+  categoryId Int
+  name       String
+  amount     Float
+  units      PatternUnit[] // Many-to-Many relation
+  category   Category      @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+}
+
+model PatternUnit {
+  id        Int     @id @default(autoincrement())
+  patternId Int
+  unitId    Int
+  pattern   Pattern @relation(fields: [patternId], references: [id])
+  unit      Unit    @relation(fields: [unitId], references: [id])
+}
+
+model Order {
+  id           Int         @id @default(autoincrement())
+  customerId   Int
+  customer     Customer    @relation(fields: [customerId], references: [id])
+  bookingDate  DateTime
+  deliveryDate DateTime
+  totalAmount  Float
+  paidAmount   Float
+  status       String
+  orderItems   OrderItem[]
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model units {
-  id      Int    @id @default(autoincrement())
-  name    String
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  patternId Int
+  quantity  Int
+  amount    Float
+  units     Json // Stores units & quantity as JSON array [{ unitId, quantity }]
+  status    String  @default("pending")
+  order     Order   @relation(fields: [orderId], references: [id])
+  pattern   Pattern @relation(fields: [patternId], references: [id])
 }
 
-model patterns {
-  id      Int    @id @default(autoincrement())
-  name    String
+model Transaction {
+  id              Int      @id @default(autoincrement())
+  customerId      Int
+  transactionType String
+  transactionId   String
+  amount          Float
+  status          String
+  paymentMode     String // "cash", "online"
+  customer        Customer @relation(fields: [customerId], references: [id])
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getCategories } from "@/database/categories";
+import { getAllCategories } from "@/database/categories";
 import CategoryForm from "./category-form";
 
 const Categories = () => {
@@ -12,7 +12,7 @@ const Categories = () => {
     }, []);
 
     async function fetchCategories() {
-        const storedCategory = await getCategories();
+        const storedCategory = await getAllCategories();
         setCategory(storedCategory);
     }
 

@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import useDebounce from "../../utils/useDebounce";
-import { addOrder } from "@/db/orders";
-import { getAllDesignPatterns } from "@/db/designPatterns";
-import { getCustomerByMobile } from "@/db/customer";
-import { getUnitsByIds } from "@/db/unitTypes";
+
+import { getUnitsByIds } from "@/database/units";
 import toast from "react-hot-toast";
+import { getCustomerByMobile } from "@/database/customers";
+import { getAllPatterns } from "@/database/patterns";
 
 export default function OrderModule() {
   const { register, handleSubmit, setValue, watch } = useForm({
@@ -36,26 +36,27 @@ export default function OrderModule() {
     }
   }, [debouncedMobile]);
 
-  const fetchCustomer = async (mobile) => {
+  const fetchCustomer = async (mobile:string) => {
     const customer = await getCustomerByMobile(mobile);
+    console.log('customer',customer);
     setValue("customerName", customer ? customer.name : "");
     setValue("customerId", customer ? customer.id : "");
   };
 
   const openPatternSelection = async () => {
-    const data = await getAllDesignPatterns();
+    const data = await getAllPatterns();
     setPatterns(data);
     setIsModalOpen(true);
   };
 
   const handlePatternClick = async (pattern) => {
-    const unitDetails = await getUnitsByIds(pattern.units || []);
-    const unitsWithQuantities = unitDetails.map((unit) => ({
-      ...unit,
-      quantity: '',
-    }));
-    setSelectedPattern(pattern);
-    setSelectedUnits(unitsWithQuantities);
+    // const unitDetails = await getUnitsByIds(pattern.units || []);
+    // const unitsWithQuantities = unitDetails.map((unit) => ({
+    //   ...unit,
+    //   quantity: '',
+    // }));
+    // setSelectedPattern(pattern);
+    // setSelectedUnits(unitsWithQuantities);
   };
 
   const handleUnitQuantityChange = (index, value) => {
@@ -106,13 +107,13 @@ export default function OrderModule() {
 
   const handleOrderSubmit = async (data:OrderProps) => {
     console.log('data=----=--==-',data);
-    if (data.orderItems.length === 0) {
-      Toast("Please add at least one item to the order.");
-      alert("Please add at least one item to the order.");
-      return;
-    }
-    await addOrder(data);
-    alert("Order saved successfully!");
+    // if (data.orderItems.length === 0) {
+    //   Toast("Please add at least one item to the order.");
+    //   alert("Please add at least one item to the order.");
+    //   return;
+    // }
+    // await addOrder(data);
+    // alert("Order saved successfully!");
   };
 
   return (

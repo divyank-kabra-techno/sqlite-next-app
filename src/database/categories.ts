@@ -2,7 +2,7 @@
 
 import prisma from "./prisma";
 
-export async function getCategories(searchQuery?: string) {
+export async function getAllCategories(searchQuery?: string) {
     return await prisma.category.findMany({
       where:searchQuery?
       {
