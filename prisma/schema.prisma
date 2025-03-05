@@ -31,20 +31,20 @@ model Unit {
 
 model Pattern {
   id         Int           @id @default(autoincrement())
-  categoryId Int
+  category_id Int
   name       String
   amount     Float
   units      PatternUnit[] // Many-to-Many relation
-  category   Category      @relation(fields: [categoryId], references: [id])
+  category   Category      @relation(fields: [category_id], references: [id])
   orderItems OrderItem[]
 }
 
 model PatternUnit {
   id        Int     @id @default(autoincrement())
-  patternId Int
   unitId    Int
-  pattern   Pattern @relation(fields: [patternId], references: [id])
+  patternId Int
   unit      Unit    @relation(fields: [unitId], references: [id])
+  pattern   Pattern @relation(fields: [patternId], references: [id])
 }
 
 model Order {

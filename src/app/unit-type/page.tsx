@@ -81,7 +81,7 @@ export default function Page() {
                     <td className="p-2">{unit.name}</td>
                     <td className="p-2">{unit.type}</td>
                     <td className="p-2">
-                      {unit.options ? JSON.parse(unit.options).join(", ") : "-"}
+                      <small>{unit.options ? JSON.parse(unit.options).join(", ") : "-"}</small>
                     </td>
                     <td className="p-2">
                       <button

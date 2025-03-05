@@ -28,7 +28,37 @@ export async function addPattern(data: {
       amount: Number(data.amount),
       units: {
         create: data.units.map((unitId) => ({
-          unit: { connect: { id: unitId } }, // ✅ Create units records
+          unit: { connect: { id: unitId } }, // ✅ Links existing units
+        })),
+      },
+    },
+    include: {
+      units: {
+        include: {
+          unit: true,
+        },
+      },
+    },
+  });
+
+}
+
+export async function updatePattern(id: number, data: {
+  category_id: number;
+  name: string;
+  amount: number;
+  units: number[];
+}) {
+  return await prisma.pattern.update({
+    where: { id: id },
+    data: {
+      category_id: data.category_id,
+      name: data.name,
+      amount: Number(data.amount),
+      units: {
+        deleteMany: {},
+        create: data.units.map((unitId) => ({
+          unit: { connect: { id: unitId } }, 
         })),
       },
     },
@@ -42,24 +72,6 @@ export async function addPattern(data: {
   });
 }
 
-export async function updatePattern(id: number, data: {
-  category_id: number;
-  name: string;
-  amount: number;
-  units: number[];
-}) {
-  return await prisma.pattern.update({
-    where: { id },
-    data: {
-      category_id: data.category_id,
-      name: data.name,
-      amount: data.amount,
-      units: {
-        set: data.units.map((unitId) => ({ id: unitId })), // Replace units
-      },
-    },
-  });
-}
 
 export async function deletePattern(id: number) {
   return await prisma.pattern.delete({

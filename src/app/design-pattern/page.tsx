@@ -23,33 +23,24 @@ interface Pattern {
   id: number;
   name: string;
   amount: number;
-  category?: {
-    name: string;
-  };
-  units: {
-    unit: {
-      name: string;
-    };
-  }[];
+  category?: { name: string };
+  units: { unit: { id: number; name: string } }[]; // ✅ Fixed structure
 }
 
 export default function DesignPatternManagement() {
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [units, setUnits] = useState<{ value: number; label: string }[]>([]);
-  const [categories, setCategories] = useState<
-    { value: number; label: string }[]
-  >([]);
-  const [editingPattern, setEditingPattern] = useState<any | null>(null);
+  const [categories, setCategories] = useState<{ value: number; label: string }[]>([]);
+  const [editingPattern, setEditingPattern] = useState<Pattern | null>(null);
 
-  const { control, register, handleSubmit, setValue, reset } =
-    useForm<FormValues>({
-      defaultValues: {
-        category_id: "",
-        name: "",
-        amount: 0,
-        selectedUnits: [],
-      },
-    });
+  const { control, register, handleSubmit, setValue, reset } = useForm<FormValues>({
+    defaultValues: {
+      category_id: "",
+      name: "",
+      amount: 0,
+      selectedUnits: [],
+    },
+  });
 
   useEffect(() => {
     loadUnits();
@@ -65,7 +56,6 @@ export default function DesignPatternManagement() {
   const loadPatterns = async () => {
     try {
       const data = await getAllPatterns();
-      console.log("Patterns:", data);
       setPatterns(data);
     } catch (error) {
       console.error("Error loading patterns:", error);
@@ -79,14 +69,14 @@ export default function DesignPatternManagement() {
 
   const onSubmit = async (data: FormValues) => {
     const selectedUnitIds = data.selectedUnits.map((unit) => unit.value);
-    const categoryId = Number(data.category_id); // Ensure number type
+    const categoryId = Number(data.category_id);
 
     if (editingPattern) {
       await updatePattern(editingPattern.id, {
         category_id: categoryId,
         name: data.name,
         amount: data.amount,
-        units: selectedUnitIds,
+        units: selectedUnitIds, // ✅ Ensures correct structure
       });
     } else {
       await addPattern({
@@ -102,16 +92,17 @@ export default function DesignPatternManagement() {
     loadPatterns();
   };
 
-  const handleEdit = (pattern: any) => {
+  const handleEdit = (pattern: Pattern) => {
     setEditingPattern(pattern);
-    setValue("category_id", pattern.category_id.toString());
+    console.log('pattern',pattern);
+    setValue("category_id", pattern.category?.id || "");
     setValue("name", pattern.name);
     setValue("amount", pattern.amount);
     setValue(
       "selectedUnits",
-      pattern.units.map((unit: any) => ({
-        value: unit.id,
-        label: unit.name,
+      pattern.units.map((unitObj) => ({
+        value: unitObj.unit.id, // ✅ Ensures correct mapping
+        label: unitObj.unit.name,
       }))
     );
   };
@@ -119,7 +110,7 @@ export default function DesignPatternManagement() {
   return (
     <div className="flex flex-col lg:flex-row h-screen p-4 gap-4">
       {/* Left - Pattern Listing */}
-      <div className="lg:w-3/4 w-full bg-gray-100 p-4 rounded-lg overflow-y-auto h-[80vh]">
+      <div className="lg:w-3/4 w-full bg-white p-4 rounded-lg overflow-y-auto h-[80vh]">
         <h2 className="text-xl font-bold mb-2">Design Patterns</h2>
         <table className="w-full border-collapse border border-gray-300">
           <thead>
@@ -132,35 +123,44 @@ export default function DesignPatternManagement() {
             </tr>
           </thead>
           <tbody>
-            {patterns.map((pattern) => (
-              <tr key={pattern.id} className="border">
-                <td className="border p-2">{pattern.category?.name}</td>
-                <td className="border p-2">{pattern.name}</td>
-                <td className="border p-2">{pattern.amount}</td>
-                <td className="border p-2">
-                  {pattern.units.map((u: any) => u.unit.name).join(", ")}{" "}
-                  {/* ✅ Fetch unit names */}
-                </td>
-                <td className="border p-2">
-                  <button
-                    onClick={() => handleEdit(pattern)}
-                    className="bg-blue-500 text-white px-2 py-1 rounded"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => {
-                      deletePattern(pattern.id)
-                        .then(() => loadPatterns())
-                        .catch(console.error);
-                    }}
-                    className="bg-red-500 text-white px-3 py-1 rounded ml-2"
-                  >
-                    Delete
-                  </button>
+            {patterns.length > 0 ? (
+              patterns.map((pattern) => (
+                <tr key={pattern.id} className="border">
+                  <td className="border p-2">{pattern.category?.name}</td>
+                  <td className="border p-2">{pattern.name}</td>
+                  <td className="border p-2">{pattern.amount}</td>
+                  <td className="border p-2">
+                    <small className="text-xs">
+                      {pattern.units.map((u) => u.unit.name).join(", ")}
+                    </small>
+                  </td>
+                  <td className="border p-2">
+                    <button
+                      onClick={() => handleEdit(pattern)}
+                      className="bg-blue-500 text-white px-2 py-1 rounded"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => {
+                        deletePattern(pattern.id)
+                          .then(() => loadPatterns())
+                          .catch(console.error);
+                      }}
+                      className="bg-red-500 text-white px-3 py-1 rounded ml-2"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={10} className="p-2 text-center">
+                  No Pattern found
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
@@ -190,11 +190,7 @@ export default function DesignPatternManagement() {
 
           <div>
             <label className="block font-bold">Amount</label>
-            <input
-              type="number"
-              {...register("amount")}
-              className="border p-2 w-full"
-            />
+            <input type="number" {...register("amount")} className="border p-2 w-full" />
           </div>
 
           <div>
@@ -202,16 +198,11 @@ export default function DesignPatternManagement() {
             <Controller
               name="selectedUnits"
               control={control}
-              render={({ field }) => (
-                <Select {...field} options={units} isMulti />
-              )}
+              render={({ field }) => <Select {...field} options={units} isMulti />}
             />
           </div>
 
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded w-full"
-          >
+          <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded w-full">
             {editingPattern ? "Update Pattern" : "Save Pattern"}
           </button>
         </form>
