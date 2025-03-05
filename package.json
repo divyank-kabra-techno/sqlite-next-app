@@ -12,6 +12,7 @@
     "@headlessui/react": "^2.2.0",
     "@prisma/client": "^6.4.1",
     "@radix-ui/react-toast": "^1.2.6",
+    "force": "^0.0.3",
     "idb": "^8.0.2",
     "next": "15.1.7",
     "react": "^19.0.0",

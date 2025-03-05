@@ -75,6 +75,7 @@ export async function getUnitsByPattern(patternId: number) {
             options: true, // Fetching additional options if needed
           },
         },
+        
       },
     });
   } catch (error) {

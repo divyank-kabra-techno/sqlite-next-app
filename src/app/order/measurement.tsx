@@ -16,7 +16,6 @@ interface UnitInputProps {
 
 const Measurement: React.FC<UnitInputProps> = ({ unit, value, onChange }) => {
     const optionsArray = unit.options ? JSON.parse(unit.options).map((opt: string) => opt.trim()) : [];
-    console.log('optionsArray',optionsArray);
     
   return (
     <div className="flex flex-col">
@@ -27,7 +26,7 @@ const Measurement: React.FC<UnitInputProps> = ({ unit, value, onChange }) => {
           type="text"
           className="border p-1 rounded-md text-center"
           value={value}
-          placeholder={`Enter ${unit.name}`}
+          placeholder={`${unit.name}`}
           onChange={(e) => onChange(e.target.value)}
         />
       )}

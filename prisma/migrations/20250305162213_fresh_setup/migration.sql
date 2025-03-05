@@ -22,10 +22,10 @@ CREATE TABLE "Unit" (
 -- CreateTable
 CREATE TABLE "Pattern" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "categoryId" INTEGER NOT NULL,
+    "category_id" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
     "amount" REAL NOT NULL,
-    CONSTRAINT "Pattern_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "Pattern_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "Category" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
