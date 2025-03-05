@@ -61,3 +61,25 @@ export async function getUnitsByIds(unitIds: number[]) {
     where: { id: { in: unitIds } },
   });
 }
+
+export async function getUnitsByPattern(patternId: number) {
+  try {
+    return await prisma.patternUnit.findMany({
+      where: { patternId },
+      select: {
+        unit: {
+          select: {
+            id: true,
+            name: true,
+            type: true, // Fetching unit type
+            options: true, // Fetching additional options if needed
+          },
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching units by pattern:", error);
+    return [];
+  }
+}
+

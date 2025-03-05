@@ -79,10 +79,18 @@ export async function deletePattern(id: number) {
   });
 }
 
-export async function getAllCategories() {
-  return await prisma.category.findMany(); // Fetch categories
+export async function getPatternsByCategory(categoryId: number) {
+  try {
+    return await prisma.pattern.findMany({
+      where: { category_id:categoryId },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching patterns by category:", error);
+    return [];
+  }
 }
 
-export async function getAllUnitTypes() {
-  return await prisma.unit.findMany(); // Fetch unit types
-}

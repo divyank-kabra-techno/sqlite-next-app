@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import useDebounce from "../../utils/useDebounce";
-
-import { getUnitsByIds } from "@/database/units";
+import { getAllCategories } from "@/database/categories";
+import { getPatternsByCategory } from "@/database/patterns";
+import { getUnitsByPattern } from "@/database/units";
 import toast from "react-hot-toast";
-import { getCustomerByMobile } from "@/database/customers";
-import { getAllPatterns } from "@/database/patterns";
+import Measurement from "./measurement";
 
 export default function OrderModule() {
   const { register, handleSubmit, setValue, watch } = useForm({
@@ -22,277 +22,232 @@ export default function OrderModule() {
     },
   });
 
+  const [categories, setCategories] = useState([]);
   const [patterns, setPatterns] = useState([]);
+  const [units, setUnits] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedPattern, setSelectedPattern] = useState(null);
   const [selectedUnits, setSelectedUnits] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const mobile = watch("mobile");
-  const debouncedMobile = useDebounce(mobile, 500);
+
   const orderItems = watch("orderItems");
 
   useEffect(() => {
-    if (debouncedMobile) {
-      fetchCustomer(debouncedMobile);
-    }
-  }, [debouncedMobile]);
+    fetchCategories();
+  }, []);
 
-  const fetchCustomer = async (mobile:string) => {
-    const customer = await getCustomerByMobile(mobile);
-    console.log('customer',customer);
-    setValue("customerName", customer ? customer.name : "");
-    setValue("customerId", customer ? customer.id : "");
+  const fetchCategories = async () => {
+    const data = await getAllCategories();
+    setCategories(data);
   };
 
-  const openPatternSelection = async () => {
-    const data = await getAllPatterns();
+  const handleCategoryClick = async (category: {
+    id: number;
+    name: string;
+  }) => {
+    setSelectedCategory(category);
+    const data = await getPatternsByCategory(category.id);
+    console.log("category click data", data);
     setPatterns(data);
-    setIsModalOpen(true);
   };
 
   const handlePatternClick = async (pattern) => {
-    // const unitDetails = await getUnitsByIds(pattern.units || []);
-    // const unitsWithQuantities = unitDetails.map((unit) => ({
-    //   ...unit,
-    //   quantity: '',
-    // }));
-    // setSelectedPattern(pattern);
-    // setSelectedUnits(unitsWithQuantities);
+    console.log("pattern click", pattern);
+    setSelectedPattern(pattern);
+    const data = await getUnitsByPattern(pattern.id);
+    setSelectedUnits(data.map((unit) => ({ ...unit, quantity: "" })));
   };
 
   const handleUnitQuantityChange = (index, value) => {
     const updatedUnits = [...selectedUnits];
-    value = value?Number(value):'';
-    updatedUnits[index].quantity = value;
+    updatedUnits[index].quantity = value ? Number(value) : "";
     setSelectedUnits(updatedUnits);
   };
 
-  const handleSaveSelection = (type: string = 'save') => {
+  const handleSaveSelection = () => {
     if (!selectedPattern || selectedUnits.length === 0) {
-      toast.error("Please select a pattern and enter the values.");
+      toast.error("Please select a pattern and enter quantities.");
       return;
     }
-  
-    const filteredUnits = selectedUnits.filter(
-      (unit) => unit.quantity && unit.quantity > 0
-    );
-  
+
+    const filteredUnits = selectedUnits.filter((unit) => unit.quantity > 0);
     if (filteredUnits.length === 0) {
-      toast.error("Please enter at least one measurement");
+      toast.error("Enter at least one measurement.");
       return;
     }
-  
+
     const newOrderItem = {
       patternId: selectedPattern.id,
       patternName: selectedPattern.name,
-      units: filteredUnits.map((unit) => ({
-        unitId: unit.id,
-        unitName: unit.name,
-        quantity: unit.quantity,
-      })),
+      units: filteredUnits,
     };
-  
+
     setValue("orderItems", [...orderItems, newOrderItem]);
-    if (type === 'save') {
-      setIsModalOpen(false);
-    }
+    setIsModalOpen(false);
+    setSelectedCategory(null);
     setSelectedPattern(null);
     setSelectedUnits([]);
   };
 
-  const handleRemoveOrderItem = (index) => {
-    const updatedOrderItems = [...orderItems];
-    updatedOrderItems.splice(index, 1);
-    setValue("orderItems", updatedOrderItems);
-  };
-
-  const handleOrderSubmit = async (data:OrderProps) => {
-    console.log('data=----=--==-',data);
-    // if (data.orderItems.length === 0) {
-    //   Toast("Please add at least one item to the order.");
-    //   alert("Please add at least one item to the order.");
-    //   return;
-    // }
-    // await addOrder(data);
-    // alert("Order saved successfully!");
-  };
-
   return (
     <div className="flex flex-col lg:flex-row p-4 gap-4">
-      {/* Order Form */}
       <div className="lg:w-3/4 bg-white p-6 rounded-xl shadow-md">
         <h2 className="text-xl font-bold mb-4">New Order</h2>
-        <form onSubmit={handleSubmit(handleOrderSubmit)} className="space-y-4">
-          <div className="flex gap-2">
-            <input
-              {...register("mobile", { required: "Mobile is required" })}
-              placeholder="Enter Mobile No"
-              className="border p-2 w-1/2 rounded-md shadow-sm"
-            />
-            <input
-              {...register("customerName")}
-              placeholder="Customer Name"
-              className="border p-2 w-1/3 rounded-md shadow-sm bg-gray-100"
-              readOnly
-            />
-            <button
-              type="button"
-              className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-md"
-            >
-              Add/Update
-            </button>
-          </div>
+        <form onSubmit={handleSubmit(() => {})} className="space-y-4">
           <button
-            type="button"
-            onClick={openPatternSelection}
+            onClick={() => setIsModalOpen(true)}
             className="bg-green-500 text-white px-4 py-2 rounded-md shadow-md"
           >
             Add Item
           </button>
-
-          {/* Display selected order items */}
-          {orderItems.length > 0 && (
-            <div className="mt-4 bg-white p-4 rounded-lg shadow-md">
-              <h3 className="text-lg font-semibold mb-2">Selected Items</h3>
-              <table className="w-full border-collapse border border-gray-300">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border p-2">Pattern</th>
-                    <th className="border p-2">Units</th>
-                    <th className="border p-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orderItems.map((item, index) => (
-                    <tr key={`selected-item-${index}`} className="text-center">
-                      <td className="border p-2 font-medium">
-                        {item.patternName}
-                      </td>
-                      <td className="border p-2">
-                        <div className="grid grid-cols-4 gap-2">
-                          {item.units.map((unit,index) => (
-                            <div className="flex bg-gray-200 px-2 py-0 rounded-md leading-[2] justify-between" key={`selected-unit-${index}`}>
-                              <span key={unit.unitId}>{unit.unitName}</span>  
-                              <span key={unit.unitId}>({unit.quantity})</span>  
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="border p-2">
-                        <button
-                          onClick={() => handleRemoveOrderItem(index)}
-                          className="bg-red-500 text-white px-2 py-1 rounded-md shadow-md"
-                        >
-                          Remove
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <div>
-              <label className="block text-sm font-bold text-gray-700">Booking Date</label>
-              <input
-                {...register("bookingDate")}
-                type="date"
-                className="border p-2 w-full rounded-md shadow-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700">Delivery Date</label>
-              <input
-                {...register("deliveryDate")}
-                type="date"
-                className="border p-2 w-full rounded-md shadow-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700">Order Status</label>
-              <select
-                {...register("status")}
-                className="border p-2 w-full rounded-md shadow-sm"
-              >
-                <option value="Pending">Pending</option>
-                <option value="Stitched">Stitched</option>
-                <option value="Delivered">Delivered</option>
-              </select>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-md"
-          >
-            Save Order
-          </button>
         </form>
       </div>
-
-      {/* Pattern Selection Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white w-2/3 h-[500px] rounded-xl shadow-lg flex flex-col">
-            {/* Header - Fixed */}
-            <div className="p-4 border-b sticky top-0 bg-white z-10 roundedk">
-                <h2 className="text-lg font-bold">Select Pattern</h2>
-            </div>
-            <div className="p-4 overflow-y-auto flex-1">
-                <div className="grid grid-cols-3 gap-2">
-                {patterns.map((pattern) => (
+          <div className="bg-white w-3/4 h-[600px] rounded-xl shadow-lg p-4 flex flex-col">
+            {/* Modal Content Wrapper */}
+            <div className="flex flex-grow overflow-hidden">
+              {/* Left Sidebar (Category List) */}
+              <div className="w-1/5 p-4 px-2 border-r overflow-y-auto">
+                <h2 className="text-lg font-bold mb-2">Select Category</h2>
+                <div className="flex flex-col gap-2">
+                  {categories.map((category) => (
                     <button
-                    key={pattern.id}
-                    className={`p-2 rounded-md cursor-pointer text-center shadow-sm transition-all ${
-                        selectedPattern?.id === pattern.id
-                        ? "bg-gray-900 text-white"
-                        : "bg-gray-200"
-                    }`}
-                    onClick={() => handlePatternClick(pattern)}
+                      key={category.id}
+                      className={`px-4 py-2 rounded-md text-left ${
+                        selectedCategory?.id === category.id
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-200"
+                      }`}
+                      onClick={() => handleCategoryClick(category)}
                     >
-                    {pattern.name}
+                      {category.name}
                     </button>
-                ))}
+                  ))}
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      className={`px-4 py-2 rounded-md text-left ${
+                        selectedCategory?.id === category.id
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-200"
+                      }`}
+                      onClick={() => handleCategoryClick(category)}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      className={`px-4 py-2 rounded-md text-left ${
+                        selectedCategory?.id === category.id
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-200"
+                      }`}
+                      onClick={() => handleCategoryClick(category)}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      className={`px-4 py-2 rounded-md text-left ${
+                        selectedCategory?.id === category.id
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-200"
+                      }`}
+                      onClick={() => handleCategoryClick(category)}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      className={`px-4 py-2 rounded-md text-left ${
+                        selectedCategory?.id === category.id
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-200"
+                      }`}
+                      onClick={() => handleCategoryClick(category)}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
                 </div>
+              </div>
 
-                {selectedPattern && (
-                    <div className="mt-4">
-                        {/* 4-Column Scrollable Layout */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                            {selectedUnits.map((unit, index) => (
-                                <div key={`unit-box-${unit.id}`} className="flex flex-col">
-                                <label className="text-sm font-bold mx-2">{unit?.name}</label>
-                                <input
-                                    type="text"
-                                    className="border p-1 rounded-md shadow-sm text-center w-full" // w-full for full width within grid cell
-                                    value={unit?.quantity}
-                                    onChange={(e) => handleUnitQuantityChange(index, e.target.value)}
-                                />
-                                </div>
-                            ))}
-                        </div>
+              {/* Right Top (Patterns) and Middle Section (Units) */}
+              <div className="w-3/4 flex flex-col">
+                {/* Right Top (Pattern List) */}
+                {selectedCategory && (
+                  <div className="p-4 border-b overflow-x-auto">
+                    <h2 className="text-lg font-bold mb-2">Select Pattern</h2>
+                    <div className="grid grid-cols-3 gap-2">
+                      {patterns.map((pattern) => (
+                        <button
+                          key={pattern.id}
+                          className={`p-2 rounded-md ${
+                            selectedPattern?.id === pattern.id
+                              ? "bg-gray-900 text-white"
+                              : "bg-gray-200"
+                          }`}
+                          onClick={() => handlePatternClick(pattern)}
+                        >
+                          {pattern.name}
+                        </button>
+                      ))}
                     </div>
+                  </div>
                 )}
+
+                {/* Middle Section (Units) */}
+                {selectedPattern && (
+                  <div className="flex-grow p-4 overflow-y-auto">
+                    <h2 className="text-lg font-bold mb-2">Enter Quantity</h2>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      {selectedUnits.map((unitWrapper, index) => {
+                        const unit = unitWrapper?.unit;
+                        return unit ? (
+                          <Measurement
+                            key={unit.id}
+                            unit={unit}
+                            value={unit.quantity || ""}
+                            onChange={(value) =>
+                              handleUnitQuantityChange(index, value)
+                            }
+                          />
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="p-4 border-t flex justify-end gap-2 sticky bottom-0 bg-white z-10 rounded">
-                <button
-                    onClick={() => setIsModalOpen(false)}
-                    className="bg-red-500 text-white px-4 py-1 rounded-md shadow-md"
-                >
-                    Close
-                </button>
-                <button
-                onClick={()=>handleSaveSelection('save')}
-                className="bg-green-300 text-green px-4 py-1 rounded-md shadow-md"
-                >
+
+            {/* Bottom Section (Buttons) */}
+            <div className="flex justify-end gap-2 p-4 border-t">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="bg-red-500 text-white px-4 py-1 rounded-md"
+              >
+                Close
+              </button>
+              <button
+                onClick={handleSaveSelection}
+                className="bg-green-500 text-white px-4 py-1 rounded-md"
+              >
                 Save & Close
-                </button>
-                <button
-                onClick={()=>handleSaveSelection('save_more')}
-                className="bg-gray-300 text-gray px-4 py-1 rounded-md shadow-md"
-                >
+              </button>
+              <button
+                //onClick={handleSaveAndAddMore}
+                onClick={() => {}}
+                className="bg-blue-500 text-white px-4 py-1 rounded-md"
+              >
                 Save & Add More
-                </button>
+              </button>
             </div>
           </div>
         </div>
