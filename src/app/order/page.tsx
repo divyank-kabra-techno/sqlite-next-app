@@ -8,6 +8,7 @@ import { getPatternsByCategory } from "@/database/patterns";
 import { getUnitsByPattern } from "@/database/units";
 import toast from "react-hot-toast";
 import Measurement from "./measurement";
+import ItemDetail from "./Component/ItemDetail";
 
 export default function OrderModule() {
   const { register, handleSubmit, setValue, watch } = useForm({
@@ -45,6 +46,8 @@ export default function OrderModule() {
     id: number;
     name: string;
   }) => {
+    setSelectedPattern(null);
+    setSelectedUnits([]);
     setSelectedCategory(category);
     const data = await getPatternsByCategory(category.id);
     console.log("category click data", data);
@@ -55,16 +58,21 @@ export default function OrderModule() {
     console.log("pattern click", pattern);
     setSelectedPattern(pattern);
     const data = await getUnitsByPattern(pattern.id);
-    setSelectedUnits(data.map((unit) => ({ ...unit, quantity: "" })));
+    
+    setSelectedUnits(data.map((unit) => ({ ...unit.unit, quantity: "" })));
   };
 
   const handleUnitQuantityChange = (index, value) => {
-    
     const updatedUnits = [...selectedUnits];
     updatedUnits[index].quantity = value ? Number(value) : "";
-    console.log('index',index,value,updatedUnits);
+    console.log("index", index, value, updatedUnits);
     setSelectedUnits(updatedUnits);
+    // console.log("indexupdatedUnits");
   };
+
+  useEffect(() => {
+    console.log("====Units====", selectedUnits);
+  }, [selectedUnits]);
 
   const handleSaveSelection = () => {
     if (!selectedPattern || selectedUnits.length === 0) {
@@ -79,10 +87,12 @@ export default function OrderModule() {
     }
 
     const newOrderItem = {
-      patternId: selectedPattern.id,
-      patternName: selectedPattern.name,
+      pattern_id: selectedPattern.id,
+      pattern_name: selectedPattern.name,
       units: filteredUnits,
     };
+
+    console.log('newOrderItem',newOrderItem);
 
     setValue("orderItems", [...orderItems, newOrderItem]);
     setIsModalOpen(false);
@@ -103,6 +113,7 @@ export default function OrderModule() {
             Add Item
           </button>
         </form>
+        <ItemDetail orderItems={orderItems}/>
       </div>
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
@@ -158,18 +169,18 @@ export default function OrderModule() {
                   <div className="flex-grow p-4 overflow-y-auto">
                     <h2 className="text-lg font-bold mb-2">Enter Quantity</h2>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      {selectedUnits.map((unitWrapper, index) => {
-                        const unit = unitWrapper?.unit;
-                        return unit ? (
+                      {selectedUnits.map((unit, index) => {
+                        console.log('====Unit====',unit)
+                        return  (
                           <Measurement
                             key={unit.id}
                             unit={unit}
-                            value={unit.quantity || ""}
+                            value={unit?.quantity || ""}
                             onChange={(value) =>
                               handleUnitQuantityChange(index, value)
                             }
                           />
-                        ) : null;
+                        )
                       })}
                     </div>
                   </div>
