@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 import { getAllCategories } from "@/database/categories";
 import { getPatternsByCategory } from "@/database/patterns";
 import { getUnitsByPattern } from "@/database/units";
-import OrderItemModal from "./OrderItemModal";
 
 export default function OrderModule() {
   const { register, handleSubmit, setValue, watch } = useForm({

@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { deleteCustomer } from "../../db/customer";
-import { addCustomer,getCustomers } from "@/database/customers";
+import { addCustomer,getCustomers,deleteCustomer } from "@/database/customers";
 
 type CustomerFormData = {
   name: string;

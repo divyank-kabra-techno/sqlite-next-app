@@ -3,7 +3,7 @@ import CategoryPatternSelection from "./CategoryPatternSelection";
 import { getUnitsByPattern } from "@/database/units";
 import toast from "react-hot-toast";
 
-export default function OrderItemModal({ categories, addOrderItem, setIsModalOpen }) {
+export default function OldOrderItemModal({ categories, addOrderItem, setIsModalOpen }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedPattern, setSelectedPattern] = useState(null);
   const [selectedUnits, setSelectedUnits] = useState([]);

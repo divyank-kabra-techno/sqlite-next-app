@@ -1,0 +1,43 @@
+import { getAllCategories } from "@/database/categories";
+import { useEffect, useState } from "react";
+import { selectedCategoryProps } from "../../models/order.model";
+import { category } from "../../models/globle.model";
+
+interface categoryListProps {
+  handleCategoryClick:({}:category)=>void;
+}
+export default function CategoryList({ handleCategoryClick }:categoryListProps) {
+  const [categories, setCategories] = useState<category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<category | null>(null);
+   useEffect(() => {
+      fetchCategories();
+    }, []);
+  
+    const fetchCategories = async () => {
+      const data = await getAllCategories();
+      setCategories(data);
+    };
+    const categoryClick = (category:category) =>{
+      setSelectedCategory(category)
+      handleCategoryClick(category);
+    }
+    return (
+      <div className="w-1/5 p-4 px-2 border-r overflow-y-auto">
+        <h2 className="text-lg font-bold mb-2">Select Category</h2>
+        <div className="flex flex-col gap-2">
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              className={`px-4 py-2 rounded-md text-left ${
+                selectedCategory?.id === category.id ? "bg-blue-500 text-white" : "bg-gray-200"
+              }`}
+              onClick={() => categoryClick(category)}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  

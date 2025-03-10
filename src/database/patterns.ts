@@ -86,6 +86,7 @@ export async function getPatternsByCategory(categoryId: number) {
       select: {
         id: true,
         name: true,
+        amount: true,
       },
     });
   } catch (error) {

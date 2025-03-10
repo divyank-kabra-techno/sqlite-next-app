@@ -17,3 +17,18 @@ interface orderPatternUnit {
     unitName:string,
     unitId:number
 }
+export interface selectedCategoryProps {
+    id:number,
+    name:string,
+}
+export interface selectedPatternProps {
+    pattern_id:number,
+    pattern_name:string,
+    amount:number
+}
+export interface unitProps {
+    id:number,
+    name:string,
+    type:string,
+    quantity:string
+}
